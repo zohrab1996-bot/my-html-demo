@@ -1,0 +1,587 @@
+<!DOCTYPE html><html lang="az" class="h-full"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myGov - Laboratoriya nəticələrinin süni intellekt əsaslı təhlili</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6', // blue-500
+                        secondary: '#6366F1', // indigo-500
+                        accent: '#8B5CF6', // violet-500
+                        gold: '#F59E0B', // amber-500
+                        charcoal: {
+                            50: '#F8FAFC', 100: '#F1F5F9', 200: '#E2E8F0',
+                            300: '#CBD5E1', 400: '#94A3B8', 500: '#64748B',
+                            600: '#475569', 700: '#334155', 800: '#1E293B',
+                            900: '#0F172A', 950: '#020617'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'gradient': 'gradient 15s ease infinite',
+                        'typing': 'typing 2s steps(40, end), blink-caret .75s step-end infinite'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0', transform: 'translateY(10px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        gradient: { '0%, 100%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' } },
+                        typing: { from: { width: '0' } },
+                        'blink-caret': { 'from, to': { borderColor: 'transparent' }, '50%': { borderColor: 'white' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .dark { color-scheme: dark; }
+        .gradient-bg {
+            background: linear-gradient(-45deg, #0F172A, #1E293B, #334155, #475569);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .glass-effect {
+            backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .result-table th, .result-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #374151; transition: all 0.2s ease; }
+        .result-table tbody tr:hover { background-color: rgba(99, 102, 241, 0.08); transform: translateX(4px); }
+        .custom-file-upload { border: 2px dashed rgba(59, 130, 246, 0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px 32px; cursor: pointer; border-radius: 12px; text-align: center; transition: all 0.3s ease; position: relative; overflow: hidden; background: rgba(59, 130, 246, 0.05); }
+        .custom-file-upload:hover { border-color: rgba(59, 130, 246, 0.8); background: rgba(59, 130, 246, 0.1); transform: translateY(-4px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1); }
+        #fileInput { display: none; }
+        .badge { display: inline-block; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1); }
+        .analysis-card { background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.95)); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+        .logo-glow { filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.4)); }
+        #particle-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .typing-cursor { border-right: .15em solid white; }
+    </style>
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.bd4eeeb8e8e02052ee92.js"></script></head>
+<body class="bg-charcoal-950 text-gray-200 h-full">
+    <canvas id="particle-canvas"></canvas>
+    <div class="min-h-full flex flex-col relative">
+        <header class="gradient-bg text-white p-6 shadow-2xl sticky top-0 z-20 backdrop-blur-sm bg-opacity-80">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="https://pfst.cf2.poecdn.net/base/image/c55ec5297463c09f25496e0ac7a2bd5756a04b6925075c0b673c8934e92db42f?w=512&amp;h=512" alt="myGov Logo" class="h-14 w-14 rounded-full p-1 logo-glow animate-pulse-slow">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-wide">My Gov</h1>
+                        <p class="text-sm text-blue-200 opacity-90 font-medium">Süni İntellektlə Sağlamlıq Təhlili</p>
+                    </div>
+                </div>
+                <div class="flex items-center bg-white bg-opacity-10 rounded-full p-2 backdrop-blur-sm cursor-pointer">
+                    <i class="fas fa-user text-xl"></i>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow container mx-auto p-4 sm:p-6 md:p-8">
+            <div id="uploadContainer" class="glass-effect rounded-2xl p-8 mb-8 card-hover animate-fade-in">
+                <div class="flex items-center mb-6">
+                    <div class="bg-primary bg-opacity-20 p-3 rounded-full mr-4 border border-primary">
+                        <i class="fas fa-file-medical text-primary text-2xl w-8 h-8 text-center leading-8"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Laboratoriya Nəticələrinizi Yükləyin</h2>
+                </div>
+                
+                <div id="uploadBox" class="mb-6">
+                    <label for="fileInput" class="custom-file-upload w-full">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-primary mb-4"></i>
+                        <div class="text-lg font-semibold text-gray-100 mb-1">Analizinizi yükləyin və ya buraya sürüşdürün</div>
+                        <div class="text-sm text-gray-400">PDF, JPG, PNG formatları dəstəklənir</div>
+                    </label>
+                    <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+
+                <div id="fileInfo" class="hidden animate-fade-in mb-6">
+                    <div class="bg-charcoal-800 p-4 rounded-lg border border-charcoal-700">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-file-pdf text-red-400 text-2xl"></i>
+                                <span id="fileName" class="font-medium text-gray-200"></span>
+                            </div>
+                            <button id="removeFileBtn" class="text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="w-full bg-charcoal-700 rounded-full h-2.5">
+                            <div id="progressBar" class="bg-gradient-to-r from-primary to-secondary h-2.5 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <button id="analyzeBtn" class="mt-4 w-full bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity transform hover:scale-[1.01] shadow-lg">
+                        <i class="fas fa-microchip mr-2"></i> Təhlil Et
+                    </button>
+                </div>
+                
+                <div class="text-lg text-gray-300 mb-4 font-medium text-center">
+                    <span class="bg-charcoal-800 px-4 py-1 rounded-full">və ya</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="loadSample1" class="bg-gradient-to-r from-charcoal-700 to-charcoal-800 p-6 rounded-xl text-left card-hover border border-blue-400/50 shadow-lg">
+                        <div class="font-bold text-lg text-white">Respublika Klinik Xəstəxanası</div>
+                        <div class="text-sm text-gray-400 mt-1">Analiz №: 12730701 - Tarix: 27.05.2025</div>
+                        <div class="flex space-x-2 mt-3">
+                            <span class="badge bg-green-500/20 text-green-300">Tam analiz</span>
+                            <span class="badge bg-blue-500/20 text-blue-300">Biokimya</span>
+                        </div>
+                    </button>
+                    
+                    <button id="loadSample2" class="bg-gradient-to-r from-charcoal-700 to-charcoal-800 p-6 rounded-xl text-left card-hover border border-violet-400/50 shadow-lg">
+                        <div class="font-bold text-lg text-white">Xaçmaz Rayon Mərkəzi Xəstəxanası</div>
+                        <div class="text-sm text-gray-400 mt-1">Analiz №: 9957081 - Tarix: 26.12.2024</div>
+                        <div class="flex space-x-2 mt-3">
+                            <span class="badge bg-orange-500/20 text-orange-300">İltihab</span>
+                            <span class="badge bg-yellow-500/20 text-yellow-300">Vitaminlər</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultContainer" class="hidden">
+                <div class="glass-effect rounded-2xl p-8 mb-8 animate-slide-up">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div class="flex items-center">
+                            <div class="bg-green-500/20 p-3 rounded-full mr-4 border border-green-500/50">
+                                <i class="fas fa-poll text-green-400 text-2xl w-8 h-8 text-center leading-8"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-white">Analiz Nəticələri</h2>
+                        </div>
+                        <span id="analysisDate" class="text-sm text-gray-300 bg-charcoal-700 px-4 py-2 rounded-full font-medium"></span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="result-table w-full mb-8 rounded-lg overflow-hidden">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
+                                    <th class="font-bold">Test</th> <th class="font-bold">Nəticə</th>
+                                    <th class="font-bold">Referans Aralığı</th> <th class="font-bold">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="glass-effect rounded-2xl p-8 mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-purple-500/20 p-3 rounded-full mr-4 border border-purple-500/50">
+                            <i class="fas fa-chart-bar text-purple-400 text-2xl w-8 h-8 text-center leading-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">Vizual Təhlil</h3>
+                    </div>
+                    <div class="bg-charcoal-800/50 p-6 rounded-xl">
+                        <canvas id="resultsChart" class="w-full h-80"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 animate-slide-up" style="animation-delay: 0.2s;">
+                     <div class="flex items-center mb-6">
+                        <div class="bg-accent/20 p-3 rounded-full mr-4 border border-accent/50">
+                            <i class="fas fa-robot text-accent text-2xl w-8 h-8 text-center leading-8"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">Süni İntellekt Təhlili</h3>
+                    </div>
+                    
+                    <div id="aiAnalysisLoading" class="analysis-card p-6 rounded-xl flex items-center">
+                        <svg class="animate-spin h-6 w-6 mr-4 text-primary" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <div>
+                            <div class="text-lg font-semibold text-gray-200">Süni intellekt nəticələri təhlil edir...</div>
+                            <div class="text-sm text-gray-400 mt-1">Bu proses bir neçə saniyə çəkə bilər.</div>
+                        </div>
+                    </div>
+                    
+                    <div id="aiAnalysisContent" class="hidden space-y-6"></div>
+
+                     <div id="disclaimer" class="hidden mt-8 p-4 bg-yellow-500/10 border-l-4 border-yellow-400 text-yellow-200 rounded-r-lg">
+                        <p class="font-bold">Mühüm Məlumat:</p>
+                        <p class="text-sm">Bu təhlil süni intellekt tərəfindən yaradılmışdır və yalnız məlumat məqsədi daşıyır. Heç bir halda peşəkar tibbi məsləhəti, diaqnozu və ya müalicəni əvəz etmir. Hər hansı bir sağlamlıq problemi ilə bağlı mütləq həkiminizlə məsləhətləşin.</p>
+                    </div>
+
+                    <div id="actionButtons" class="hidden mt-8 flex flex-col sm:flex-row gap-4">
+                        <button onclick="window.print()" class="flex-1 bg-blue-500/20 text-blue-300 font-bold py-3 px-4 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50"><i class="fas fa-print mr-2"></i> Nəticələri Çap Et</button>
+                        <button class="flex-1 bg-green-500/20 text-green-300 font-bold py-3 px-4 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/50"><i class="fas fa-file-pdf mr-2"></i> PDF Yüklə</button>
+                        <button id="resetBtn" class="flex-1 bg-gray-500/20 text-gray-300 font-bold py-3 px-4 rounded-lg hover:bg-gray-500/30 transition-colors border border-gray-500/50"><i class="fas fa-redo mr-2"></i> Yeni Analiz</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-charcoal-900 p-6 mt-auto border-t border-charcoal-800">
+            <div class="container mx-auto text-center text-gray-400">
+                <p>© 2025 MyGov - Azərbaycan Respublikasının rəqəmsal dövlət platforması</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const fileInput = document.getElementById('fileInput');
+            const uploadContainer = document.getElementById('uploadContainer');
+            const uploadBox = document.getElementById('uploadBox');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileNameEl = document.getElementById('fileName');
+            const progressBar = document.getElementById('progressBar');
+            const removeFileBtn = document.getElementById('removeFileBtn');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            const loadSample1 = document.getElementById('loadSample1');
+            const loadSample2 = document.getElementById('loadSample2');
+            
+            const resultContainer = document.getElementById('resultContainer');
+            const resultTableBody = document.getElementById('resultTableBody');
+            const analysisDate = document.getElementById('analysisDate');
+            const aiAnalysisLoading = document.getElementById('aiAnalysisLoading');
+            const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+            const disclaimer = document.getElementById('disclaimer');
+            const actionButtons = document.getElementById('actionButtons');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            let resultsChart = null;
+
+            // --- Particle background animation ---
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            let particles = [];
+
+            function createParticles() {
+                particles = [];
+                let particleCount = (canvas.height * canvas.width) / 10000;
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 1.5 + 0.5,
+                        vx: Math.random() * 0.5 - 0.25,
+                        vy: Math.random() * 0.5 - 0.25,
+                        opacity: Math.random() * 0.5 + 0.2
+                    });
+                }
+            }
+
+            function drawParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                particles.forEach(p => {
+                    ctx.beginPath();
+                    ctx.globalAlpha = p.opacity;
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                });
+                requestAnimationFrame(drawParticles);
+            }
+            
+            createParticles();
+            drawParticles();
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                createParticles();
+            });
+
+            // --- File Upload Logic ---
+            function handleFileSelect(file) {
+                fileNameEl.textContent = file.name;
+                uploadBox.classList.add('hidden');
+                fileInfo.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                setTimeout(() => { progressBar.style.width = '100%'; }, 100);
+            }
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) handleFileSelect(fileInput.files[0]);
+            });
+
+            removeFileBtn.addEventListener('click', () => {
+                fileInput.value = '';
+                fileInfo.classList.add('hidden');
+                uploadBox.classList.remove('hidden');
+            });
+
+            analyzeBtn.addEventListener('click', () => showSampleResults(1));
+
+            // --- Chart Creation ---
+            function createChart(data) {
+                const chartCtx = document.getElementById('resultsChart').getContext('2d');
+                
+                if (resultsChart) {
+                    resultsChart.destroy();
+                }
+
+                const labels = data.map(item => item.test);
+                const values = data.map(item => parseFloat(item.result));
+                const colors = data.map(item => {
+                    switch(item.status) {
+                        case 'high': return 'rgba(239, 68, 68, 0.8)';
+                        case 'low': return 'rgba(245, 158, 11, 0.8)';
+                        default: return 'rgba(34, 197, 94, 0.8)';
+                    }
+                });
+                const borderColors = data.map(item => {
+                    switch(item.status) {
+                        case 'high': return 'rgba(239, 68, 68, 1)';
+                        case 'low': return 'rgba(245, 158, 11, 1)';
+                        default: return 'rgba(34, 197, 94, 1)';
+                    }
+                });
+
+                resultsChart = new Chart(chartCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Nəticələr',
+                            data: values,
+                            backgroundColor: colors,
+                            borderColor: borderColors,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#f1f5f9',
+                                bodyColor: '#e2e8f0',
+                                borderColor: 'rgba(59, 130, 246, 0.5)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const item = data[context.dataIndex];
+                                        return [
+                                            `Nəticə: ${item.result} ${item.unit}`,
+                                            `Referans: ${item.range}`,
+                                            `Status: ${item.status === 'normal' ? 'Normal' : item.status === 'high' ? 'Yüksək' : 'Aşağı'}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: '#9ca3af',
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                },
+                                grid: {
+                                    color: 'rgba(55, 65, 81, 0.5)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    color: '#9ca3af'
+                                },
+                                grid: {
+                                    color: 'rgba(55, 65, 81, 0.5)'
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+            }
+
+            // --- Main Logic ---
+            loadSample1.addEventListener('click', () => showSampleResults(1));
+            loadSample2.addEventListener('click', () => showSampleResults(2));
+            resetBtn.addEventListener('click', () => {
+                resultContainer.classList.add('hidden');
+                uploadContainer.classList.remove('hidden');
+                removeFileBtn.click();
+                if (resultsChart) {
+                    resultsChart.destroy();
+                    resultsChart = null;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            function showSampleResults(sampleNumber) {
+                uploadContainer.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                resultTableBody.innerHTML = '';
+                aiAnalysisContent.innerHTML = '';
+                
+                const sampleData = getSampleData(sampleNumber);
+                analysisDate.textContent = `Analiz tarixi: ${sampleData.date}`;
+                
+                populateTable(sampleData.results);
+                
+                // Create chart with delay for animation
+                setTimeout(() => {
+                    createChart(sampleData.results);
+                }, 300);
+                
+                aiAnalysisLoading.classList.remove('hidden');
+                aiAnalysisContent.classList.add('hidden');
+                disclaimer.classList.add('hidden');
+                actionButtons.classList.add('hidden');
+                
+                setTimeout(() => {
+                    aiAnalysisLoading.classList.add('hidden');
+                    aiAnalysisContent.classList.remove('hidden');
+                    generateAiAnalysis(sampleNumber);
+                }, 2500);
+            }
+
+            function populateTable(data) {
+                data.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.style.animationDelay = `${index * 50}ms`;
+                    row.classList.add('animate-fade-in');
+                    
+                    const statusConfig = {
+                        normal: { text: 'Normal', classes: 'bg-green-500/20 text-green-300' },
+                        high: { text: 'Yüksək', classes: 'bg-red-500/20 text-red-300' },
+                        low: { text: 'Aşağı', classes: 'bg-yellow-500/20 text-yellow-300' }
+                    };
+                    const status = statusConfig[item.status];
+
+                    row.innerHTML = `
+                        <td class="font-medium text-gray-200">${item.test}</td>
+                        <td class="font-semibold text-white">${item.result} ${item.unit}</td>
+                        <td class="text-gray-400">${item.range}</td>
+                        <td><span class="badge ${status.classes}">${status.text}</span></td>
+                    `;
+                    resultTableBody.appendChild(row);
+                });
+            }
+
+            async function typeWriter(element, text, speed = 20) {
+                return new Promise(resolve => {
+                    let i = 0;
+                    element.innerHTML = '';
+                    element.classList.add('typing-cursor');
+                    function typing() {
+                        if (i < text.length) {
+                            element.innerHTML += text.charAt(i);
+                            i++;
+                            setTimeout(typing, speed);
+                        } else {
+                            element.classList.remove('typing-cursor');
+                            resolve();
+                        }
+                    }
+                    typing();
+                });
+            }
+
+            async function generateAiAnalysis(sampleNumber) {
+                const analysisData = getAiAnalysisData(sampleNumber);
+                
+                for (const cardData of analysisData) {
+                    const card = document.createElement('div');
+                    card.className = 'analysis-card p-6 rounded-xl animate-fade-in';
+                    card.innerHTML = `
+                        <h4 class="text-lg font-bold text-white mb-3 flex items-center">
+                            <span class="w-8 h-8 rounded-full flex items-center justify-center mr-3 ${cardData.iconBg}">
+                                <i class="${cardData.icon} ${cardData.iconColor}"></i>
+                            </span>
+                            ${cardData.title}
+                        </h4>
+                        <div class="space-y-3 pl-11"></div>
+                    `;
+                    aiAnalysisContent.appendChild(card);
+                    
+                    const contentContainer = card.querySelector('.space-y-3');
+                    for (const itemText of cardData.content) {
+                        const p = document.createElement('p');
+                        p.className = 'text-gray-300';
+                        contentContainer.appendChild(p);
+                        await typeWriter(p, itemText);
+                    }
+                }
+                
+                disclaimer.classList.remove('hidden');
+                disclaimer.classList.add('animate-fade-in');
+                actionButtons.classList.remove('hidden');
+                actionButtons.classList.add('animate-fade-in');
+            }
+
+            function getSampleData(sampleNumber) {
+                if (sampleNumber === 1) {
+                    return {
+                        date: '27.05.2025',
+                        results: [
+                            { test: 'Hemoqlobin (HGB)', result: '146', unit: 'g/L', range: '130-160', status: 'normal' },
+                            { test: 'Eritrositlər (RBC)', result: '5.6', unit: '10^12/L', range: '4.5-5.5', status: 'high' },
+                            { test: 'Leykositlər (WBC)', result: '8.2', unit: '10^9/L', range: '4.0-10.0', status: 'normal' },
+                            { test: 'Trombositlər (PLT)', result: '223', unit: '10^9/L', range: '150-400', status: 'normal' },
+                            { test: 'Qlükoza', result: '6.8', unit: 'mmol/L', range: '3.9-5.8', status: 'high' },
+                            { test: 'Ümumi xolesterin', result: '5.9', unit: 'mmol/L', range: '<5.2', status: 'high' },
+                            { test: 'Kreatinin', result: '89', unit: 'μmol/L', range: '62-106', status: 'normal' },
+                            { test: 'ALT', result: '22', unit: 'U/L', range: '<41', status: 'normal' }
+                        ]
+                    };
+                } else {
+                    return {
+                        date: '26.12.2024',
+                        results: [
+                            { test: 'Leykositlər (WBC)', result: '11.3', unit: '10^9/L', range: '4.0-10.0', status: 'high' },
+                            { test: 'C-reaktiv protein', result: '15.2', unit: 'mg/L', range: '<5.0', status: 'high' },
+                            { test: 'Ferritin', result: '25', unit: 'ng/mL', range: '30-400', status: 'low' },
+                            { test: 'Vitamin D', result: '18', unit: 'ng/mL', range: '>30', status: 'low' },
+                            { test: 'Hemoqlobin (HGB)', result: '132', unit: 'g/L', range: '130-160', status: 'normal' },
+                            { test: 'TSH', result: '2.8', unit: 'mIU/L', range: '0.4-4.0', status: 'normal' }
+                        ]
+                    };
+                }
+            }
+
+            function getAiAnalysisData(sampleNumber) {
+                if (sampleNumber === 1) {
+                    return [
+                        { title: 'Ümumi Xülasə', icon: 'fas fa-clipboard-check', iconBg: 'bg-green-500/20', iconColor: 'text-green-400', content: ['Analiz nəticələriniz əsasən stabildir, lakin bəzi göstəricilər diqqət tələb edir. Qaraciyər funksiyaları və qanın laxtalanma göstəriciləri normaldır.'] },
+                        { title: 'Diqqət Mərkəzində', icon: 'fas fa-bullseye', iconBg: 'bg-orange-500/20', iconColor: 'text-orange-400', content: ['Eritrositlərin (5.6) miqdarı referans aralığının yuxarı sərhədindən bir qədər yüksəkdir.', 'Qlükoza (6.8 mmol/L) və Ümumi xolesterin (5.9 mmol/L) səviyyələri də normadan yüksəkdir.'] },
+                        { title: 'Potensial Risklər', icon: 'fas fa-exclamation-triangle', iconBg: 'bg-red-500/20', iconColor: 'text-red-400', content: ['Yüksək qlükoza prediabet və ya şəkərli diabet riskinə işarə edə bilər.', 'Yüksək xolesterin ürək-damar xəstəlikləri üçün risk faktorudur.'] },
+                        { title: 'Tövsiyələr və Növbəti Addımlar', icon: 'fas fa-notes-medical', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-400', content: ['Qidalanma rejiminə diqqət etmək, xüsusilə şəkər və doymuş yağların qəbulunu azaltmaq tövsiyə olunur.', 'Endokrinoloq və kardioloqla məsləhətləşmək üçün həkiminizə müraciət edin.', 'Müntəzəm fiziki aktivlik həm qlükoza, həm də xolesterin səviyyələrini tənzimləməyə kömək edə bilər.'] }
+                    ];
+                } else {
+                    return [
+                        { title: 'Ümumi Xülasə', icon: 'fas fa-clipboard-check', iconBg: 'bg-yellow-500/20', iconColor: 'text-yellow-400', content: ['Nəticələriniz orqanizmdə aktiv iltihabi prosesin və bəzi vitamin/mineral çatışmazlıqlarının olduğunu göstərir. Tiroid funksiyanız normaldır.'] },
+                        { title: 'Diqqət Mərkəzində', icon: 'fas fa-bullseye', iconBg: 'bg-orange-500/20', iconColor: 'text-orange-400', content: ['Leykositlərin (11.3) və C-reaktiv proteinin (15.2 mg/L) səviyyəsi kəskin şəkildə yüksəkdir.', 'Ferritin (25 ng/mL) və Vitamin D (18 ng/mL) səviyyələri isə normadan aşağıdır. Bu, dəmir anbarının azalmasına və D vitamini çatışmazlığına işarə edir.'] },
+                        { title: 'Potensial Risklər', icon: 'fas fa-exclamation-triangle', iconBg: 'bg-red-500/20', iconColor: 'text-red-400', content: ['Yüksək iltihab göstəriciləri gizli infeksiya, revmatoloji və ya autoimmun xəstəliklərin əlaməti ola bilər.', 'Dəmir və D vitamini çatışmazlığı yorğunluq, immunitetin zəifləməsi və sümük ağrıları kimi simptomlara səbəb ola bilər.'] },
+                        { title: 'Tövsiyələr və Növbəti Addımlar', icon: 'fas fa-notes-medical', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-400', content: ['İltihabın səbəbini aydınlaşdırmaq üçün təcili olaraq həkimə (terapevt və ya revmatoloq) müraciət etməyiniz vacibdir.', 'Həkim nəzarəti ilə D vitamini və dəmir preparatlarının qəbuluna başlanıla bilər.', 'Qidalanmanızı dəmir və D vitamini ilə zəngin qidalarla (qırmızı ət, ispanaq, balıq, yumurta) zənginləşdirin.'] }
+                    ];
+                }
+            }
+        });
+    </script>
+
+
+</body></html>
